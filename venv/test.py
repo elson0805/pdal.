@@ -43,7 +43,7 @@ def worksheet():
     # print('B2內容： ', ws['B2'].value)
     # ws.cell(column=2, row=3).value = 999
     wb.save(fn) # 若給予不同檔名代表另存新檔的意思
-
+123
 
 def decide_Row():  # 判斷資料數目
     wb1 = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx", data_only=False)
