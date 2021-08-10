@@ -1,7 +1,0 @@
-import win32com.client as win32
-import Plate_Locking_Hole
-import Plate_Pin_Hole
-import Plate_Inner_Guiding_Post
-import Plate_SBT_Hole
-import Plate_Pilot_Punch_Hole
-import Plate_Stripper_Punch

@@ -1,11 +1,6 @@
 import csv
 import win32com.client as win32
 import openpyxl
-import xlwt
-from xlwt import Workbook
-import xlrd
-import xlutils
-from xlutils.copy import copy
 
 output_file_root = str()
 import_file_root = str()
@@ -59,7 +54,7 @@ def create_catia_bom():
     assemblyConvertor1Variant.SetCurrentFormat(arrayOfVariantOfBSTR1)
 
     # 含數據內容之BOM表(複製用)儲存路徑
-    assemblyConvertor1("XLS", "" + BOM_output_path + "catia_bom.xlsx", product1)
+    assemblyConvertor1.Print("XLS", "" + BOM_output_path + "catia_bom.xlsx", product1)
 
 
 def output_bom():
@@ -154,13 +149,13 @@ def save():
 
 
 def decide_Row():  # 判斷資料數目
-    wb1 = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx", data_only=False)
+    wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx", data_only=False)
 
     Rng1 = {"what": "Quantity", "After": "ActiveCell", "LookIn": "xlFormulas",
             "LookAt": "xlPart", "SearchOrder": "xlByRows", "SearchDirection": "xlNext",
             "MatchCase": False, "MatchByte": False, "SearchFormat": False}
 
-    sheet = wb1['工作表1']
+    sheet = wb['工作表1']
 
     for row in sheet.iter_rows(min_row=5, max_col=1, max_row=99, values_only=True):
         cunt = 0
@@ -197,10 +192,11 @@ def decide_Size(cunt, page):
     if page >= 1:
         pagenumb = 30
     page0 = page
+
     for j in range(1, page + 2):
-        Sheetname = str("Sheet" + str(j))
-        Sheets(Sheetname).Select()
-    for i in range(1, pagenumb):
+        Sheetname = "Sheet" + str(j)
+        ws =
+    for i in range(1, pagenumb + 1):
         wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
         kss = {"What": "Size", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
@@ -213,8 +209,9 @@ def decide_Size(cunt, page):
         cells(sc, ss).Offset(RowOffset=1).Select()
         Selection.Copy()
         wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
-        kss1 = {What: "規格", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
-                SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
+        kss1 = {"What": "規格", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+                "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
+                "SearchFormat": False}
         Cells.Find(kss1)
         ss1 = kss.Column  # 列數
         sc1 = kss.Row + i - 1  # 行動
