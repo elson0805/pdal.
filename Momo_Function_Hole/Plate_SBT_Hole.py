@@ -712,6 +712,7 @@ def stop_plate(SBT_data11, SBT_data61, SBT_CB_data81, SBTQuantity1):
         stop_plate_machining_instructions_SBT_Hole = 0
         stop_plate_stripper_bolt_number = 0
         for j in range(1, SBTQuantity1 + 1):
+            # ==========================建點==========================
             stop_plate_machining_instructions_SBT_Hole += 1
 
             document = catapp.Documents
@@ -743,7 +744,6 @@ def stop_plate(SBT_data11, SBT_data61, SBT_CB_data81, SBTQuantity1):
             part1.InWorkObject = hybridShapePointCoord1
             part1.InWorkObject.Name = "SBT_point_" + str(j)
             part1.Update()
-            # ==========================建點==========================
 
             hybridShapePointCoord2 = hybridShapeFactory1.AddNewPointCoord(0, 0, stop_plate_height)
             reference5 = part1.CreateReferenceFromObject(hybridShapePointCoord1)
@@ -752,7 +752,9 @@ def stop_plate(SBT_data11, SBT_data61, SBT_CB_data81, SBTQuantity1):
             part1.InWorkObject = hybridShapePointCoord2
             part1.InWorkObject.Name = "SBT_dir_point_" + str(j)
             part1.Update()
+            # ==========================建點==========================
 
+            # ==========================挖孔==========================
             shapeFactory2 = part1.ShapeFactory
             hybridShapes1 = body1.HybridShapes
             reference8 = part1.CreateReferenceFromObject(hybridShapePointCoord2)
@@ -773,7 +775,9 @@ def stop_plate(SBT_data11, SBT_data61, SBT_CB_data81, SBTQuantity1):
             stop_plate_stripper_bolt_number += 1
             hole1.Name = "Stop-plate-Stripper-bolt-" + str(stop_plate_stripper_bolt_number)
             part1.Update()
+            # ==========================建點==========================
 
+            time.sleep(1)
             # ========草圖置換==========
             Point_formula_1_name = (str("Body.2\\SBT_point_" + str(j)))
             parameters1 = part1.Parameters

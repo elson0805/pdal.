@@ -32,6 +32,7 @@ with open(strip_parameters_file_root) as csvFile:
     strip_parameter_list = parameter_list
 
 Sheets = [0] * 99
+data = []
 
 
 def BOMMaking():
@@ -92,41 +93,35 @@ def information_bom(page):
             if Data == "製    表":
                 ss = kss.Column  # 列數
                 sc = kss.Row
-                Cells(sc, ss).Offset(ColumnOffset=1).Select()
-                ActiveCell.FormulaR1C1 = Frame_Commissioner
+
             elif Data == "製表日期":
-                kss[What] = "製表日期"
+                kss["What"] = "製表日期"
                 ss = kss.Column  # 列數
                 sc = kss.Row
-                Cells(sc, ss).Offset(ColumnOffset=1).Select()
-                ActiveCell.FormulaR1C1 = Frame_Todate
+
             elif Data == "頁    數":
-                kss[What] = "頁    數"
+                kss["What"] = "頁    數"
                 ss = kss.Column  # 列數
                 sc = kss.Row
-                Cells(sc, ss).Offset(ColumnOffset=1).Select()
-                ActiveCell.FormulaR1C1 = j
+
             elif Data == "模具編號":
-                kss[What] = "模具編號"
+                kss["What"] = "模具編號"
                 ss = kss.Column  # 列數
                 sc = kss.Row
-                Cells(sc, ss).Offset(ColumnOffset=1).Select()
-                ActiveCell.FormulaR1C1 = Frame_guest_number
+
             elif Data == "品    號":
-                kss[What] = "品    號"
+                kss["What"] = "品    號"
                 ss = kss.Column  # 列數
                 sc = kss.Row
-                Cells(sc, ss).Offset(ColumnOffset=1).Select()
-                ActiveCell.FormulaR1C1 = Frame_guest_number
+
             elif Data == "品    名":
-                kss[What] = "品    名"
+                kss["What"] = "品    名"
                 ss = kss.Column  # 列數
                 sc = kss.Row
-                Cells(sc, ss).Offset(ColumnOffset=1).Select()
-                ActiveCell.FormulaR1C1 = Finished_product_Name
-        ActiveSheet.Range("A1").Select()
-        ActiveCell.FormulaR1C1 = Company_Name
-    Adjustment()
+
+        # ActiveSheet.Range("A1").Select()
+        # ActiveCell.FormulaR1C1 = Company_Name
+    Adjustment(page)
 
 
 def save():
@@ -149,21 +144,25 @@ def save():
 
 
 def decide_Row():  # 判斷資料數目
-    wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx", data_only=False)
+    wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx", data_only=True)
 
     Rng1 = {"what": "Quantity", "After": "ActiveCell", "LookIn": "xlFormulas",
             "LookAt": "xlPart", "SearchOrder": "xlByRows", "SearchDirection": "xlNext",
             "MatchCase": False, "MatchByte": False, "SearchFormat": False}
 
-    sheet = wb['工作表1']
+    ws = wb['工作表1']    # 獲取Sheet
 
-    for row in sheet.iter_rows(min_row=5, max_col=1, max_row=99, values_only=True):
-        cunt = 0
-        for value in row:
-            if value == "":
-                cunt -= 1
-                break
+    cunt = 0
+    for row in ws['A5':'A99']:
+        for cell in row:
             cunt += 1
+        if cell.value is None:
+            cunt -= 1
+            break
+        data.append(cell.value)
+    print(data)
+
+    return cunt
 
 
 def decide_Page(cunt):
@@ -173,9 +172,9 @@ def decide_Page(cunt):
         page = 0
     for i in range(page, 1, -1):
         j = i
-        sheet = wb['工作表1']
+        sheet = wb['Sheet1']
         target = wb.copy_worksheet(sheet)
-        target.title = '工作表' + str(i)
+        target.title = 'Sheet' + str(i)
 
     if page < 1:
         pagenumb = cunt
@@ -186,6 +185,7 @@ def decide_Page(cunt):
 
 
 def decide_Size(cunt, page):
+    data = []
     loops = 0
     if page < 1:
         pagenumb = cunt
@@ -195,29 +195,29 @@ def decide_Size(cunt, page):
 
     for j in range(1, page + 2):
         Sheetname = "Sheet" + str(j)
-        ws =
+        wb = openpyxl.load_workbook(BOM_output_path + "BOM_空白頁.xlsx")
+        ws = wb["Sheet1"]
     for i in range(1, pagenumb + 1):
-        wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
+        # ==========================複製BOM表資料==========================
+        wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
+        ws = wb.active
         kss = {"What": "Size", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                "SearchFormat": False}
-        cells.Find(kss)
-        ss = kss.Column  # 列數
-        sc = kss.Row
-        sc = kss.Row + loops  # 行動
-        cells(sc, ss).Select()  # 位置
-        cells(sc, ss).Offset(RowOffset=1).Select()
-        Selection.Copy()
+        ss = ws.cell(row=7, column=5)
+        data.append(ws.ss_values(i))
+
+        # ==========================複製BOM表資料==========================
+
+        # ==========================貼上BOM表資料==========================
         wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
+        ws = wb.active
         kss1 = {"What": "規格", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                 "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                 "SearchFormat": False}
-        Cells.Find(kss1)
-        ss1 = kss.Column  # 列數
-        sc1 = kss.Row + i - 1  # 行動
-        Cells(sc1, ss1).Select()  # 位置
-        Cells(sc1, ss1).Offset(RowOffset=1).Select()
-        ActiveSheet.Paste()
+
+        # ==========================貼上BOM表資料==========================
+
         loops += 1
     page0 -= 1
     if page0 == 0:
@@ -234,12 +234,7 @@ def decide_NO(cunt, page):
             kss = {"What": "件號", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
-            Cells.Find(kss)
-            ss = kss.Column  # 列數
-            sc = kss.Row + i - 1  # 行動
-            Cells(sc, ss).Select()  # 位置
-            Cells(sc, ss).Offset(RowOffset=1).Select()
-            ActiveCell.FormulaR1C1 = i
+
         page0 -= 1
         if page0 == 0:
             pagenumb = cunt - 30 * page
@@ -260,21 +255,12 @@ def decide_name(cunt, page):
             kss = {"What": "Part Number", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
-            Cells.Find(kss)
-            ss = kss.Column  # 列數
-            sc = kss.Row + i - 1  # 行動
-            Cells(sc, ss).Select()  # 位置
-            Cells(sc, ss).Offset(RowOffset=1).Select()
-            Selection.Copy()
+
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
-            kss1 = {What: "名稱", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
-                    SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
-            Cells.Find(kss1)
-            ss1 = kss.Column  # 列數
-            sc1 = kss.Row + i - 1  # 行動
-            Cells(sc1, ss1).Select()  # 位置
-            Cells(sc1, ss1).Offset(RowOffset=1).Select()
-            ActiveSheet.Paste()
+            kss1 = {"What": "名稱", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
+                    "SearchFormat": False}
+
             loops += 1
         page0 -= 1
         if page0 == 0:
@@ -296,21 +282,12 @@ def decide_Quantity(cunt, page):
             kss = {"What": "Quantity", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
-            Cells.Find(kss)
-            ss = kss.Column  # 列數
-            sc = kss.Row + i - 1  # 行動
-            Cells(sc, ss).Select()  # 位置
-            Cells(sc, ss).Offset(RowOffset=1).Select()
-            Selection.Copy()
+
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
-            kss1 = {What: "數量", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
-                    SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
-            Cells.Find(kss1)
-            ss1 = kss.Column  # 列數
-            sc1 = kss.Row + i - 1  # 行動
-            Cells(sc1, ss1).Select()  # 位置
-            Cells(sc1, ss1).Offset(RowOffset=1).Select()
-            ActiveSheet.Paste()
+            kss1 = {"What": "數量", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
+                    "SearchFormat": False}
+
             loops += 1
         page0 -= 1
         if page0 == 0:
@@ -332,21 +309,12 @@ def decide_material(cunt, page):
             kss = {"What": "Material_Data", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": "False"}
-            Cells.Find(kss)
-            ss = kss.Column  # 列數
-            sc = kss.Row + i - 1  # 行動
-            Cells(sc, ss).Select()  # 位置
-            Cells(sc, ss).Offset(RowOffset=1).Select()
-            Selection.Copy()
+
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
-            kss1 = {What: "材質", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
-                    SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
-            Cells.Find(kss1)
-            ss1 = kss.Column  # 列數
-            sc1 = kss.Row + i - 1  # 行動
-            Cells(sc1, ss1).Select()  # 位置
-            Cells(sc1, ss1).Offset(RowOffset=1).Select()
-            ActiveSheet.Paste()
+            kss1 = {"What": "材質", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
+                    "SearchFormat": False}
+
             loops += 1
             page0 -= 1
             if page0 == 0:
@@ -368,22 +336,12 @@ def decide_Heat_treatment(cunt, page):
             kss = {"What": "Heat Treatment", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
-            Cells.Find(kss)
-            ss = kss.Column  # 列數
-            sc = kss.Row + i - 1  # 行動
-            Cells(sc, ss).Select()  # 位置
-            Cells(sc, ss).Offset(RowOffset=1).Select()
-            Selection.Copy()
+
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
             kss1 = {"What": "熱處理", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                     "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                     "SearchFormat": False}
-            Cells.Find(kss1)
-            ss1 = kss.Column  # 列數
-            sc1 = kss.Row + i - 1  # 行動
-            Cells(sc1, ss1).Select()  # 位置
-            Cells(sc1, ss1).Offset(RowOffset=1).Select()
-            ActiveSheet.Paste()
+
             loops += 1
         page0 -= 1
         if page0 == 0:
@@ -405,22 +363,12 @@ def decide_description(cunt, page):
             kss = {"What": "Product Description", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
-            Cells.Find(kss)
-            ss = kss.Column  # 列數
-            sc = kss.Row + i - 1  # 行動
-            Cells(sc, ss).Select()  # 位置
-            Cells(sc, ss).Offset(RowOffset=1).Select()
-            Selection.Copy()
+
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
             kss1 = {"What": "規格", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                     "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                     "SearchFormat": False}
-            Cells.Find(kss1)
-            ss1 = kss.Column  # 列數
-            sc1 = kss.Row + i - 1  # 行動
-            Cells(sc1, ss1).Select()  # 位置
-            Cells(sc1, ss1).Offset(RowOffset=1).Select()
-            ActiveSheet.Paste()
+
             loops += 1
         page0 -= 1
         if page0 == 0:
@@ -442,75 +390,65 @@ def decide_Pa(cunt, page):
             kss = {"What": "Page", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
-            Cells.Find(kss)
-            ss = kss.Column  # 列數
-            sc = kss.Row + i - 1  # 行動
-            Cells(sc, ss).Select()  # 位置
-            Cells(sc, ss).Offset(RowOffset=1).Select()
-            Selection.Copy()
+
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
             kss1 = {"What": "頁碼", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                     "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                     "SearchFormat": False}
-            Cells.Find(kss1)
-            ss1 = kss.Column  # 列數
-            sc1 = kss.Row + i - 1  # 行動
-            Cells(sc1, ss1).Select()  # 位置
-            Cells(sc1, ss1).Offset(RowOffset=1).Select()
-            ActiveSheet.Paste()
+
             loops += 1
         page0 -= 1
         if page0 == 0:
             pagenumb = cunt - 30 * page
 
 
-def decide_cost():
+def decide_cost(page):
     CB_cost()
     MS_cost()
     MSB_cost()
-    MSP_cost()
-    LDZB_cost()
+    MSP_cost(page)
+    LDZB_cost(page)
 
 
 def draw_block(cunt, page):
-    for CBi in range(1, page + 1):
-        Sheetname = str("Sheet" + str(CBi))
+    for i in range(1, page + 1):
+        Sheetname = str("Sheet" + str(i))
         Sheets(Sheetname).Select()
-        ActiveWindow.SmallScroll(Down=21)
-        Range("B7:G36").Select()
-        ActiveWindow.SmallScroll(Down=-12)
-        Selection.Borders(xlDiagonalDown).LineStyle = xlNone
-        Selection.Borders(xlDiagonalUp).LineStyle = xlNone
-
-        Selection.Borders(xlEdgeLeft)
-        LineStyle = xlContinuous
-        Weight = xlThin
-        ColorIndex = xlAutomatic
-
-        Selection.Borders(xlEdgeTop)
-        LineStyle = xlContinuous
-        Weight = xlThin
-        ColorIndex = xlAutomatic
-
-        Selection.Borders(xlEdgeBottom)
-        LineStyle = xlContinuous
-        Weight = xlThin
-        ColorIndex = xlAutomatic
-
-        Selection.Borders(xlEdgeRight)
-        LineStyle = xlContinuous
-        Weight = xlThin
-        ColorIndex = xlAutomatic
-
-        Selection.Borders(xlInsideVertical)
-        LineStyle = xlContinuous
-        Weight = xlThin
-        ColorIndex = xlAutomatic
-
-        Selection.Borders(xlInsideHorizontal)
-        LineStyle = xlContinuous
-        Weight = xlThin
-        ColorIndex = xlAutomatic
+        # ActiveWindow.SmallScroll(Down=21)
+        # Range("B7:G36").Select()
+        # ActiveWindow.SmallScroll(Down=-12)
+        # Selection.Borders(xlDiagonalDown).LineStyle = xlNone
+        # Selection.Borders(xlDiagonalUp).LineStyle = xlNone
+        #
+        # Selection.Borders(xlEdgeLeft)
+        # LineStyle = xlContinuous
+        # Weight = xlThin
+        # ColorIndex = xlAutomatic
+        #
+        # Selection.Borders(xlEdgeTop)
+        # LineStyle = xlContinuous
+        # Weight = xlThin
+        # ColorIndex = xlAutomatic
+        #
+        # Selection.Borders(xlEdgeBottom)
+        # LineStyle = xlContinuous
+        # Weight = xlThin
+        # ColorIndex = xlAutomatic
+        #
+        # Selection.Borders(xlEdgeRight)
+        # LineStyle = xlContinuous
+        # Weight = xlThin
+        # ColorIndex = xlAutomatic
+        #
+        # Selection.Borders(xlInsideVertical)
+        # LineStyle = xlContinuous
+        # Weight = xlThin
+        # ColorIndex = xlAutomatic
+        #
+        # Selection.Borders(xlInsideHorizontal)
+        # LineStyle = xlContinuous
+        # Weight = xlThin
+        # ColorIndex = xlAutomatic
 
         # ------置中
         # Range("A7:H36").Select()
@@ -731,66 +669,66 @@ def CB_cost():
     CB12_270 = 256
     CB12_280 = 274
     CB12_290 = 292
-    for CBi in range(1, page + 1):
-        Sheetname = str("Sheet" + str(CBi))
-        Sheets(Sheetname).Select()
-        CBC0 = None
-        for CBj in range(1, 30):
-            CBK = {"What": "CB", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
-                   "SearchOrder": "xlByRows",
-                   "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
-            Cells.Find(CBK)
-            if CBK == None:
-                break
-            CBk1 = CBK.Row
-            CBk2 = CBK.Column
-            Cells(CBk1, CBk2).Select()
-            CBA = ActiveCell.FormulaR1C1
-            CBC_CBj = CBA
-            if CBC_CBj == CBC_0:
-                break
-            if CBj == 1:
-                CBC_0 = CBA
-            if inStr(CBA, "CB") == 1:
-                CBV = 2
-            if inStr(CBA, "MS") == 1:
-                CBV = 2
-            if inStr(CBA, "MSP") == 1:
-                CBV = 3
-            if inStr(CBA, "MSB") == 1:
-                CBV = 3
-            if inStr(CBA, "LDZB") == 1:
-                CBV = 4
-            CBv1 = InStr(CBA, "-")
-            CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
-            CBv3 = Mid(CBA, CBv1 + 1)
-            CBv4 = CDbl(CBv3)
-            if CBv2 == 3:
-                CBcost = CB3_(CBv4)
-            if CBv2 == 4:
-                CBcost = CB4_(CBv4)
-            if CBv2 == 5:
-                CBcost = CB5_(CBv4)
-            if CBv2 == 6:
-                CBcost = CB6_(CBv4)
-            if CBv2 == 8:
-                CBcost = CB8_(CBv4)
-            if CBv2 == 10:
-                CBcost = CB10_(CBv4)
-            if CBv2 == 12:
-                CBcost = CB12_(CBv4)
-
-            # 數量
-            Cells(CBk1, CBk2 + 1).Select()
-            CBb = ActiveCell.FormulaR1C1
-
-            co = {"What": "金額", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
-                  "SearchOrder": "xlByRows",
-                  "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
-            Cells.Find(co)
-            co1 = co.Column
-            Cells(CBk1, co1).Select()
-            ActiveCell.FormulaR1C1 = CBcost * CBb
+    # for CBi in range(1, page + 1):
+    #     Sheetname = str("Sheet" + str(CBi))
+    #     Sheets(Sheetname).Select()
+    #     CBC0 = None
+    #     for CBj in range(1, 30):
+    #         CBK = {"What": "CB", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+    #                "SearchOrder": "xlByRows",
+    #                "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
+    #         Cells.Find(CBK)
+    #         if CBK == None:
+    #             break
+    #         CBk1 = CBK.Row
+    #         CBk2 = CBK.Column
+    #         Cells(CBk1, CBk2).Select()
+    #         CBA = ActiveCell.FormulaR1C1
+    #         CBC_CBj = CBA
+    #         if CBC_CBj == CBC_0:
+    #             break
+    #         if CBj == 1:
+    #             CBC_0 = CBA
+    #         if inStr(CBA, "CB") == 1:
+    #             CBV = 2
+    #         if inStr(CBA, "MS") == 1:
+    #             CBV = 2
+    #         if inStr(CBA, "MSP") == 1:
+    #             CBV = 3
+    #         if inStr(CBA, "MSB") == 1:
+    #             CBV = 3
+    #         if inStr(CBA, "LDZB") == 1:
+    #             CBV = 4
+    #         CBv1 = InStr(CBA, "-")
+    #         CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
+    #         CBv3 = Mid(CBA, CBv1 + 1)
+    #         CBv4 = CDbl(CBv3)
+    #         if CBv2 == 3:
+    #             CBcost = CB3_(CBv4)
+    #         if CBv2 == 4:
+    #             CBcost = CB4_(CBv4)
+    #         if CBv2 == 5:
+    #             CBcost = CB5_(CBv4)
+    #         if CBv2 == 6:
+    #             CBcost = CB6_(CBv4)
+    #         if CBv2 == 8:
+    #             CBcost = CB8_(CBv4)
+    #         if CBv2 == 10:
+    #             CBcost = CB10_(CBv4)
+    #         if CBv2 == 12:
+    #             CBcost = CB12_(CBv4)
+    #
+    #         # 數量
+    #         Cells(CBk1, CBk2 + 1).Select()
+    #         CBb = ActiveCell.FormulaR1C1
+    #
+    #         co = {"What": "金額", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+    #               "SearchOrder": "xlByRows",
+    #               "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
+    #         Cells.Find(co)
+    #         co1 = co.Column
+    #         Cells(CBk1, co1).Select()
+    #         ActiveCell.FormulaR1C1 = CBcost * CBb
 
 
 def MS_cost():
@@ -881,71 +819,71 @@ def MS_cost():
     MS12_60 = 20
     MS12_70 = 25
     MS12_80 = 25
-    for CBi in range(1, page + 1):
-        Sheetname = str("Sheet" + str(CBi))
-        Sheets(Sheetname).Select()
-        CBC_0 = None
-        for CBj in range(1, 30):
-            CBK = {"What": "MS", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
-                   "SearchOrder": "xlByRows",
-                   "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
-            Cells.Find(CBK)
-            if CBK == None:
-                break
-            CBk1 = CBK.Row
-            CBk2 = CBK.Column
-            Cells(CBk1, CBk2).Select()
-            CBA = ActiveCell.FormulaR1C1
-            CBC_CBj = CBA
-            if CBC_CBj == CBC_0:
-                break
-            if CBj == 1:
-                CBC_0 = CBA
-            if inStr(CBA, "CB") == 1:
-                CBV = 2
-            if inStr(CBA, "MS") == 1:
-                CBV = 2
-            if inStr(CBA, "MSP") == 1:
-                CBV = 3
-            if inStr(CBA, "MSB") == 1:
-                CBV = 3
-            if inStr(CBA, "LDZB") == 1:
-                CBV = 4
-            CBv1 = InStr(CBA, "-")
-            CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
-            CBv3 = Mid(CBA, CBv1 + 1)
-            CBv4 = CDbl(CBv3)
-            if CBV == 2:
-                CBcost = None
-            if CBv2 == 1:
-                CBcost = MS1_(CBv4)
-            if CBv2 == 2:
-                CBcost = MS2_(CBv4)
-            if CBv2 == 3:
-                CBcost = MS3_(CBv4)
-            if CBv2 == 4:
-                CBcost = MS4_(CBv4)
-            if CBv2 == 5:
-                CBcost = MS5_(CBv4)
-            if CBv2 == 6:
-                CBcost = MS6_(CBv4)
-            if CBv2 == 8:
-                CBcost = MS8_(CBv4)
-            if CBv2 == 10:
-                CBcost = MS10_(CBv4)
-            if CBv2 == 12:
-                CBcost = MS12_(CBv4)
-            else:
-                break  # 不確定
-            Cells(CBk1, CBk2 + 1).Select()
-            CBb = ActiveCell.FormulaR1C1
-            co = {"What": "金額", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
-                  "SearchOrder": "xlByRows",
-                  "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
-            Cells.Find(co)
-            co1 = co.Column
-            Cells(CBk1, co1).Select()
-            ActiveCell.FormulaR1C1 = CBcost * CBb
+    # for CBi in range(1, page + 1):
+    #     Sheetname = str("Sheet" + str(CBi))
+    #     Sheets(Sheetname).Select()
+    #     CBC_0 = None
+    #     for CBj in range(1, 30):
+    #         CBK = {"What": "MS", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+    #                "SearchOrder": "xlByRows",
+    #                "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
+    #         Cells.Find(CBK)
+    #         if CBK == None:
+    #             break
+    #         CBk1 = CBK.Row
+    #         CBk2 = CBK.Column
+    #         Cells(CBk1, CBk2).Select()
+    #         CBA = ActiveCell.FormulaR1C1
+    #         CBC_CBj = CBA
+    #         if CBC_CBj == CBC_0:
+    #             break
+    #         if CBj == 1:
+    #             CBC_0 = CBA
+    #         if inStr(CBA, "CB") == 1:
+    #             CBV = 2
+    #         if inStr(CBA, "MS") == 1:
+    #             CBV = 2
+    #         if inStr(CBA, "MSP") == 1:
+    #             CBV = 3
+    #         if inStr(CBA, "MSB") == 1:
+    #             CBV = 3
+    #         if inStr(CBA, "LDZB") == 1:
+    #             CBV = 4
+    #         CBv1 = InStr(CBA, "-")
+    #         CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
+    #         CBv3 = Mid(CBA, CBv1 + 1)
+    #         CBv4 = CDbl(CBv3)
+    #         if CBV == 2:
+    #             CBcost = None
+    #         if CBv2 == 1:
+    #             CBcost = MS1_(CBv4)
+    #         if CBv2 == 2:
+    #             CBcost = MS2_(CBv4)
+    #         if CBv2 == 3:
+    #             CBcost = MS3_(CBv4)
+    #         if CBv2 == 4:
+    #             CBcost = MS4_(CBv4)
+    #         if CBv2 == 5:
+    #             CBcost = MS5_(CBv4)
+    #         if CBv2 == 6:
+    #             CBcost = MS6_(CBv4)
+    #         if CBv2 == 8:
+    #             CBcost = MS8_(CBv4)
+    #         if CBv2 == 10:
+    #             CBcost = MS10_(CBv4)
+    #         if CBv2 == 12:
+    #             CBcost = MS12_(CBv4)
+    #         else:
+    #             break  # 不確定
+    #         Cells(CBk1, CBk2 + 1).Select()
+    #         CBb = ActiveCell.FormulaR1C1
+    #         co = {"What": "金額", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+    #               "SearchOrder": "xlByRows",
+    #               "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
+    #         Cells.Find(co)
+    #         co1 = co.Column
+    #         Cells(CBk1, co1).Select()
+    #         ActiveCell.FormulaR1C1 = CBcost * CBb
 
 
 def MSB_cost():
@@ -1044,192 +982,192 @@ def MSB_cost():
     MSB12_90 = 65
     MSB12_95 = 65
     MSB12_100 = 65
-    for CBi in range(1, page + 1):
-        Sheetname = str("Sheet" + str(CBi))
-        Sheets(Sheetname).Select()
-        CBC_0 = None
-        for CBj in range(1, 30):
-            CBK = {"What": "MSB", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
-                   "SearchOrder": "xlByRows",
-                   "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
-            Cells.Find(CBK)
-            if CBK == None:
-                break
-            CBk1 = CBK.Row
-            CBk2 = CBK.Column
-            Cells(CBk1, CBk2).Select()
-            CBA = ActiveCell.FormulaR1C1
-            CBC_CBj = CBA
-            if CBC_CBj == CBC_0:
-                break
-            if CBj == 1:
-                CBC_0 = CBA
-            if inStr(CBA, "CB") == 1:
-                CBV = 2
-            if inStr(CBA, "MS") == 1:
-                CBV = 2
-            if inStr(CBA, "MSP") == 1:
-                CBV = 3
-            if inStr(CBA, "MSB") == 1:
-                CBV = 3
-            if inStr(CBA, "LDZB") == 1:
-                CBV = 4
-            CBv1 = InStr(CBA, "-")
-            CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
-            CBv3 = Mid(CBA, CBv1 + 1)
-            CBv4 = CDbl(CBv3)
-            if CBv2 == 4:
-                CBcost = MS4_(CBv4)
-            if CBv2 == 5:
-                CBcost = MS5_(CBv4)
-            if CBv2 == 6:
-                CBcost = MS6_(CBv4)
-            if CBv2 == 8:
-                CBcost = MS8_(CBv4)
-            if CBv2 == 10:
-                CBcost = MS10_(CBv4)
-            if CBv2 == 12:
-                CBcost = MS12_(CBv4)
-            else:
-                break  # 不確定
-            # 數量
-            Cells(CBk1, CBk2 + 1).Select()
-            CBb = ActiveCell.FormulaR1C1
-            co = {What: "金額", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
-                  SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
-            Cells.Find(co)
-            co1 = co.Column
-            Cells(CBk1, co1).Select()
-            ActiveCell.FormulaR1C1 = CBcost * CBb
+    # for CBi in range(1, page + 1):
+    #     Sheetname = str("Sheet" + str(CBi))
+    #     Sheets(Sheetname).Select()
+    #     CBC_0 = None
+    #     for CBj in range(1, 30):
+    #         CBK = {"What": "MSB", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+    #                "SearchOrder": "xlByRows",
+    #                "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
+    #         Cells.Find(CBK)
+    #         if CBK == None:
+    #             break
+    #         CBk1 = CBK.Row
+    #         CBk2 = CBK.Column
+    #         Cells(CBk1, CBk2).Select()
+    #         CBA = ActiveCell.FormulaR1C1
+    #         CBC_CBj = CBA
+    #         if CBC_CBj == CBC_0:
+    #             break
+    #         if CBj == 1:
+    #             CBC_0 = CBA
+    #         if inStr(CBA, "CB") == 1:
+    #             CBV = 2
+    #         if inStr(CBA, "MS") == 1:
+    #             CBV = 2
+    #         if inStr(CBA, "MSP") == 1:
+    #             CBV = 3
+    #         if inStr(CBA, "MSB") == 1:
+    #             CBV = 3
+    #         if inStr(CBA, "LDZB") == 1:
+    #             CBV = 4
+    #         CBv1 = InStr(CBA, "-")
+    #         CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
+    #         CBv3 = Mid(CBA, CBv1 + 1)
+    #         CBv4 = CDbl(CBv3)
+    #         if CBv2 == 4:
+    #             CBcost = MS4_(CBv4)
+    #         if CBv2 == 5:
+    #             CBcost = MS5_(CBv4)
+    #         if CBv2 == 6:
+    #             CBcost = MS6_(CBv4)
+    #         if CBv2 == 8:
+    #             CBcost = MS8_(CBv4)
+    #         if CBv2 == 10:
+    #             CBcost = MS10_(CBv4)
+    #         if CBv2 == 12:
+    #             CBcost = MS12_(CBv4)
+    #         else:
+    #             break  # 不確定
+    #         # 數量
+    #         Cells(CBk1, CBk2 + 1).Select()
+    #         CBb = ActiveCell.FormulaR1C1
+    #         co = {What: "金額", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
+    #               SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
+    #         Cells.Find(co)
+    #         co1 = co.Column
+    #         Cells(CBk1, co1).Select()
+    #         ActiveCell.FormulaR1C1 = CBcost * CBb
 
 
-def MSP_cost():
+def MSP_cost(page):
     MSP32_190 = 262
     for CBi in range(1, page + 1):
         Sheetname = str("Sheet" + str(CBi))
         Sheets(Sheetname).Select()
         CBC_0 = None
-        for CBj in range(1, 30):
-            CBK = {What: "MSP", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
-                   SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
-            Cells.Find(CBK)
-            if CBK == None:
-                break
-            CBk1 = CBK.Row
-            CBk2 = CBK.Column
-            Cells(CBk1, CBk2).Select()
-            CBA = ActiveCell.FormulaR1C1
-            CBC_CBj = CBA
-            if CBC_CBj == CBC_0:
-                break
-            if CBj == 1:
-                CBC_0 = CBA
-            if inStr(CBA, "CB") == 1:
-                CBV = 2
-            if inStr(CBA, "MS") == 1:
-                CBV = 2
-            if inStr(CBA, "MSP") == 1:
-                CBV = 3
-            if inStr(CBA, "MSB") == 1:
-                CBV = 3
-            if inStr(CBA, "LDZB") == 1:
-                CBV = 4
-            CBv1 = inStr(CBA, "-")
-            CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
-            CBv3 = Mid(CBA, CBv1 + 1)
-            CBv4 = CDbl(CBv3)
-            if CBv2 == 32:
-                CBcost = MS32_(CBv4)
-            else:
-                break  # 不確定
-            # 數量
-            Cells(CBk1, CBk2 + 1).Select()
-            CBb = ActiveCell.FormulaR1C1
-            co = {What: "金額", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
-                  SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
-            Cells.Find(co)
-            co1 = co.Column
-            Cells(CBk1, co1).Select()
-            ActiveCell.FormulaR1C1 = CBcost * CBb
+        # for CBj in range(1, 30):
+        #     CBK = {What: "MSP", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
+        #            SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
+        #     Cells.Find(CBK)
+        #     if CBK == None:
+        #         break
+        #     CBk1 = CBK.Row
+        #     CBk2 = CBK.Column
+        #     Cells(CBk1, CBk2).Select()
+        #     CBA = ActiveCell.FormulaR1C1
+        #     CBC_CBj = CBA
+        #     if CBC_CBj == CBC_0:
+        #         break
+        #     if CBj == 1:
+        #         CBC_0 = CBA
+        #     if inStr(CBA, "CB") == 1:
+        #         CBV = 2
+        #     if inStr(CBA, "MS") == 1:
+        #         CBV = 2
+        #     if inStr(CBA, "MSP") == 1:
+        #         CBV = 3
+        #     if inStr(CBA, "MSB") == 1:
+        #         CBV = 3
+        #     if inStr(CBA, "LDZB") == 1:
+        #         CBV = 4
+        #     CBv1 = inStr(CBA, "-")
+        #     CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
+        #     CBv3 = Mid(CBA, CBv1 + 1)
+        #     CBv4 = CDbl(CBv3)
+        #     if CBv2 == 32:
+        #         CBcost = MS32_(CBv4)
+        #     else:
+        #         break  # 不確定
+        #     # 數量
+        #     Cells(CBk1, CBk2 + 1).Select()
+        #     CBb = ActiveCell.FormulaR1C1
+        #     co = {What: "金額", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
+        #           SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
+        #     Cells.Find(co)
+        #     co1 = co.Column
+        #     Cells(CBk1, co1).Select()
+        #     ActiveCell.FormulaR1C1 = CBcost * CBb
 
 
-def LDZB_cost():
+def LDZB_cost(page):
     LDBZ32_80 = 1325
     for CBi in range(1, page + 1):
         Sheetname = str("Sheet" + str(CBi))
         Sheets(Sheetname).Select()
         CBC_0 = None
-        for CBj in range(1, 30):
-            CBK = {What: "LDBZ", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
-                   SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
-            Cells.Find(CBK)
-            if CBK == None:
-                break
-            CBk1 = CBK.Row
-            CBk2 = CBK.Column
-            Cells(CBk1, CBk2).Select()
-            CBA = ActiveCell.FormulaR1C1
-            CBC_CBj = CBA
-            if CBC_CBj == CBC_0:
-                break
-            if CBj == 1:
-                CBC_0 = CBA
-            if inStr(CBA, "CB") == 1:
-                CBV = 2
-            if inStr(CBA, "MS") == 1:
-                CBV = 2
-            if inStr(CBA, "MSP") == 1:
-                CBV = 3
-            if inStr(CBA, "MSB") == 1:
-                CBV = 3
-            if inStr(CBA, "LDZB") == 1:
-                CBV = 4
-            CBv1 = inStr(CBA, "-")
-            CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
-            CBv3 = Mid(CBA, CBv1 + 1)
-            CBv4 = CDbl(CBv3)
-            if CBv2 == 32:
-                CBcost = MS32_(CBv4)
-            else:
-                break  # 不確定
-            # 數量
-            Cells(CBk1, CBk2 + 1).Select()
-            CBb = ActiveCell.FormulaR1C1
-            co = {What: "金額", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
-                  SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
-            Cells.Find(co)
-            co1 = co.Column
-            Cells(CBk1, co1).Select()
-            ActiveCell.FormulaR1C1 = CBcost * CBb
+        # for CBj in range(1, 30):
+        #     CBK = {What: "LDBZ", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
+        #            SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
+        #     Cells.Find(CBK)
+        #     if CBK == None:
+        #         break
+        #     CBk1 = CBK.Row
+        #     CBk2 = CBK.Column
+        #     Cells(CBk1, CBk2).Select()
+        #     CBA = ActiveCell.FormulaR1C1
+        #     CBC_CBj = CBA
+        #     if CBC_CBj == CBC_0:
+        #         break
+        #     if CBj == 1:
+        #         CBC_0 = CBA
+        #     if inStr(CBA, "CB") == 1:
+        #         CBV = 2
+        #     if inStr(CBA, "MS") == 1:
+        #         CBV = 2
+        #     if inStr(CBA, "MSP") == 1:
+        #         CBV = 3
+        #     if inStr(CBA, "MSB") == 1:
+        #         CBV = 3
+        #     if inStr(CBA, "LDZB") == 1:
+        #         CBV = 4
+        #     CBv1 = inStr(CBA, "-")
+        #     CBv2 = Mid(CBA, CBV + 1, CBv1 - CBV - 1)
+        #     CBv3 = Mid(CBA, CBv1 + 1)
+        #     CBv4 = CDbl(CBv3)
+        #     if CBv2 == 32:
+        #         CBcost = MS32_(CBv4)
+        #     else:
+        #         break  # 不確定
+        #     # 數量
+        #     Cells(CBk1, CBk2 + 1).Select()
+        #     CBb = ActiveCell.FormulaR1C1
+        #     co = {What: "金額", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
+        #           SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
+        #     Cells.Find(co)
+        #     co1 = co.Column
+        #     Cells(CBk1, co1).Select()
+        #     ActiveCell.FormulaR1C1 = CBcost * CBb
 
 
-def Adjustment():
+def Adjustment(page):
     for i in range(1, page + 1):
         Sheetname = str(str("Sheet") + str(i))
         Sheets(Sheetname).Select()
         # --------------------------------------------------------調整欄寬至適當大小
-        ActiveSheet.Range("B7").Select()
-        Range(Selection, Selection.End(xlDown)).Select()
-        ActiveWindow.RangeSelection()
-        Columns.AutoFit()
-        Rows.AutoFit()
-        # --------------------------------------------------------調整欄寬至適當大小
-
-        # --------------------------------------------------------文字置中
-        Worksheets(Sheetname).Activate()
-        ActiveSheet.UsedRange.Select()
-        Range("A1:H37").Borders.LineStyle = xlContinuous  # EXCEL範圍內加上框線
-        Selection()
-        HorizontalAlignment = xlCenter
-        VerticalAlignment = xlCenter
-        WrapText = False
-        Orientation = 0
-        AddIndent = False
-        IndentLevel = 0
-        ShrinkToFit = False
-        ReadingOrder = xlContext
-        # --------------------------------------------------------文字置中
-        Selection.Font.Name = "標楷體"
+        # ActiveSheet.Range("B7").Select()
+        # Range(Selection, Selection.End(xlDown)).Select()
+        # ActiveWindow.RangeSelection()
+        # Columns.AutoFit()
+        # Rows.AutoFit()
+        # # --------------------------------------------------------調整欄寬至適當大小
+        #
+        # # --------------------------------------------------------文字置中
+        # Worksheets(Sheetname).Activate()
+        # ActiveSheet.UsedRange.Select()
+        # Range("A1:H37").Borders.LineStyle = xlContinuous  # EXCEL範圍內加上框線
+        # Selection()
+        # HorizontalAlignment = xlCenter
+        # VerticalAlignment = xlCenter
+        # WrapText = False
+        # Orientation = 0
+        # AddIndent = False
+        # IndentLevel = 0
+        # ShrinkToFit = False
+        # ReadingOrder = xlContext
+        # # --------------------------------------------------------文字置中
+        # Selection.Font.Name = "標楷體"
 
 
 BOMMaking()
