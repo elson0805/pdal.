@@ -1,6 +1,8 @@
 import csv
 import win32com.client as win32
 import openpyxl
+from openpyxl.styles import Font, colors, Alignment
+import time
 
 output_file_root = str()
 import_file_root = str()
@@ -31,8 +33,15 @@ with open(strip_parameters_file_root) as csvFile:
     parameter_list = tuple(tuple(rows)[0])
     strip_parameter_list = parameter_list
 
+number = 654452
+
 Sheets = [0] * 99
 data = []
+data_size = []
+
+app = xw.App(visible=True, add_book=False)  # 程式可見，只打開不新建工作薄
+app.display_alerts = False  # 警告關閉
+app.screen_updating = True  # 螢幕更新關閉
 
 
 def BOMMaking():
@@ -46,23 +55,25 @@ def create_catia_bom():
     catapp = win32.Dispatch("CATIA.Application")
     document = catapp.ActiveDocument
     product1 = document.Product
+    wb1 = app.books.open(die_rule_path + "rule.xlsx")
+
     assemblyConvertor1 = product1.getItem("BillOfMaterial")
+    arrayOfVariantOfBSTR1 = ["Quantity", "Part Number", "Material_Data", "Heat Treatment", "Product Description",
+                             "Page", "Size"]
 
     assemblyConvertor1Variant = assemblyConvertor1
     # assemblyConvertor1Variant.SetSecondaryFormat(arrayOfVariantOfBSTR1)
-    arrayOfVariantOfBSTR1 = ["Quantity", "Part Number", "Material_Data", "Heat Treatment", "Product Description",
-                             "Page", "Size"]
     assemblyConvertor1Variant.SetCurrentFormat(arrayOfVariantOfBSTR1)
 
     # 含數據內容之BOM表(複製用)儲存路徑
-    assemblyConvertor1.Print("XLS", "" + BOM_output_path + "catia_bom.xlsx", product1)
+    assemblyConvertor1.Print("XLS", BOM_output_path + "catia_bom.xlsx", product1)
 
 
 def output_bom():
-    wb1 = openpyxl.load_workbook(str(BOM_output_path) + "catia_bom.xlsx")
-    wb2 = openpyxl.load_workbook(str(onwork_BOM_open) + "BOM_空白頁.xlsx")
+    wb1 = app.books.open(BOM_output_path + "catia_bom.xlsx")
+    wb2 = app.books.open(onwork_BOM_open + "BOM_空白頁.xlsx")
     (cunt) = decide_Row()  # 搜尋資料數目
-    (page) = decide_Page(cunt)  # page
+    (page) = decide_Page(cunt)  # BOM表頁數
     decide_Size(cunt, page)  # 規格
     decide_NO(cunt, page)  # 件號
     decide_name(cunt, page)  # 名稱
@@ -70,7 +81,7 @@ def output_bom():
     decide_material(cunt, page)  # 材質
     decide_Heat_treatment(cunt, page)  # 熱處理
     decide_description(cunt, page)  # 規格
-    decide_Pa(cunt, page)
+    decide_Pa(cunt, page)  # 頁碼
     # decide_cost(cunt, page)  # 價格
     draw_block(cunt, page)  # 備註
     # xlApp = GetObject("Excel.Application")  # 引用正在執行的Excel Application
@@ -81,46 +92,41 @@ def output_bom():
 
 
 def information_bom(page):
-    wb1 = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
     for j in range(1, page + 1):
-        Sheetname = str(str("Sheet") + str(j))
-        Sheets(Sheetname).Select()
+        Sheet = "Sheet" + str(j)
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+        ws = wb[Sheet]
         data = ["製    表", "製表日期", "頁    數", "模具編號", "品    號", "品    名"]
         kss = {"What": "製    表", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                "SearchFormat": False}
         for Data in data:
             if Data == "製    表":
-                ss = kss.Column  # 列數
-                sc = kss.Row
+                ws.cell(row=4, column=7, value="專案人員")
 
             elif Data == "製表日期":
                 kss["What"] = "製表日期"
-                ss = kss.Column  # 列數
-                sc = kss.Row
+                localtime = time.localtime()
+                result = time.strftime("%Y-%m-%d %I:%M:%S %p", localtime)
+                ws.cell(row=5, column=7, value=result)
 
             elif Data == "頁    數":
                 kss["What"] = "頁    數"
-                ss = kss.Column  # 列數
-                sc = kss.Row
+                ws.cell(row=3, column=7, value=j)
 
             elif Data == "模具編號":
                 kss["What"] = "模具編號"
-                ss = kss.Column  # 列數
-                sc = kss.Row
+                ws.cell(row=3, column=3, value=number)
 
             elif Data == "品    號":
                 kss["What"] = "品    號"
-                ss = kss.Column  # 列數
-                sc = kss.Row
+                ws.cell(row=4, column=3, value=number)
 
             elif Data == "品    名":
                 kss["What"] = "品    名"
-                ss = kss.Column  # 列數
-                sc = kss.Row
+                ws.cell(row=5, column=3, value='矽鋼片連續模')
 
-        # ActiveSheet.Range("A1").Select()
-        # ActiveCell.FormulaR1C1 = Company_Name
+        ws.cell(row=5, column=3, value='金屬中心')
     Adjustment(page)
 
 
@@ -144,13 +150,13 @@ def save():
 
 
 def decide_Row():  # 判斷資料數目
-    wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx", data_only=True)
+    wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
 
     Rng1 = {"what": "Quantity", "After": "ActiveCell", "LookIn": "xlFormulas",
             "LookAt": "xlPart", "SearchOrder": "xlByRows", "SearchDirection": "xlNext",
             "MatchCase": False, "MatchByte": False, "SearchFormat": False}
 
-    ws = wb['工作表1']    # 獲取Sheet
+    ws = wb['工作表1']  # 獲取Sheet
 
     cunt = 0
     for row in ws['A5':'A99']:
@@ -166,7 +172,7 @@ def decide_Row():  # 判斷資料數目
 
 
 def decide_Page(cunt):
-    wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
+    wb = openpyxl.load_workbook(BOM_output_path + "BOM_空白頁.xlsx")
     page = int(cunt / 30)
     if page < 1:
         page = 0
@@ -185,7 +191,6 @@ def decide_Page(cunt):
 
 
 def decide_Size(cunt, page):
-    data = []
     loops = 0
     if page < 1:
         pagenumb = cunt
@@ -195,45 +200,51 @@ def decide_Size(cunt, page):
 
     for j in range(1, page + 2):
         Sheetname = "Sheet" + str(j)
-        wb = openpyxl.load_workbook(BOM_output_path + "BOM_空白頁.xlsx")
-        ws = wb["Sheet1"]
-    for i in range(1, pagenumb + 1):
-        # ==========================複製BOM表資料==========================
-        wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
-        ws = wb.active
-        kss = {"What": "Size", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
-               "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
-               "SearchFormat": False}
-        ss = ws.cell(row=7, column=5)
-        data.append(ws.ss_values(i))
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+        ws = wb[Sheetname]
+        for i in range(1, pagenumb + 1):
+            # ==========================複製BOM表資料==========================
+            wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
+            ws = wb.active
+            kss = {"What": "Size", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+                   "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
+                   "SearchFormat": False}
 
-        # ==========================複製BOM表資料==========================
+            k = 0
+            row = ws['G' + str(k + 4)]
+            cell = row
+            data_size.append(cell.value)
+            k += 1
+            # ==========================複製BOM表資料==========================
 
-        # ==========================貼上BOM表資料==========================
-        wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
-        ws = wb.active
-        kss1 = {"What": "規格", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
-                "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
-                "SearchFormat": False}
+            # ==========================貼上BOM表資料==========================
+            wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+            ws = wb.active
+            kss1 = {"What": "規格", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
+                    "SearchFormat": False}
 
-        # ==========================貼上BOM表資料==========================
+            ws.cell(row=(i + 6), column=3, value=cell.value)
+            # ==========================貼上BOM表資料==========================
 
-        loops += 1
-    page0 -= 1
-    if page0 == 0:
-        pagenumb = cunt - 30 * page
+            loops += 1
+        page0 -= 1
+        if page0 == 0:
+            pagenumb = cunt - 30 * page
 
 
 def decide_NO(cunt, page):
-    wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
+    wb = openpyxl.load_workbook(str(str(onwork_BOM_open) + "BOM_空白頁.xlsx"))
     page0 = page
-    for j in range(1, page + 1):
+    for j in range(1, page + 2):
         Sheetname = str("Sheet" + str(j))
-        Sheets(Sheetname).Select()
+        ws = wb[Sheetname]
         for i in range(1, pagenumb + 1):
             kss = {"What": "件號", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
+
+            ws.cell(row=(i + 6), column=1, value=i)  # 依照順序填入編號
 
         page0 -= 1
         if page0 == 0:
@@ -247,19 +258,32 @@ def decide_name(cunt, page):
     if page >= 1:
         pagenumb = 30
     page0 = page
-    for j in range(1, page + 1):
+    for j in range(1, page + 2):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        Sheets(Sheetname).Select()
-        for i in range(1, pagenumb):
-            wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
+        ws = wb[Sheetname]
+        for i in range(1, pagenumb + 1):
+            # ==========================複製BOM表資料==========================
+            wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
             kss = {"What": "Part Number", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
 
-            wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
+            k = 0
+            row = ws['B' + str(k + 4)]
+            cell = row
+            data_size.append(cell.value)
+            k += 1
+            # ==========================複製BOM表資料==========================
+
+            # ==========================貼上BOM表資料==========================
+            wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
             kss1 = {"What": "名稱", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                     "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                     "SearchFormat": False}
+
+            ws.cell(row=(i + 6), column=2, value=cell.value)
+            # ==========================貼上BOM表資料==========================
 
             loops += 1
         page0 -= 1
@@ -274,19 +298,31 @@ def decide_Quantity(cunt, page):
     if page >= 1:
         pagenumb = 30
     page0 = page
-    for j in range(1, page + 1):
+    for j in range(1, page + 2):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        Sheets(Sheetname).Select()
-        for i in range(1, pagenumb):
-            wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
+        ws = wb[Sheetname]
+        for i in range(1, pagenumb + 1):
+            # ==========================複製BOM表資料==========================
+            wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
             kss = {"What": "Quantity", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
+            k = 0
+            row = ws['A' + str(k + 4)]
+            cell = row
+            data_size.append(cell.value)
+            k += 1
+            # ==========================複製BOM表資料==========================
 
-            wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
+            # ==========================貼上BOM表資料==========================
+            wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
             kss1 = {"What": "數量", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                     "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                     "SearchFormat": False}
+
+            ws.cell(row=(i + 6), column=6, value=cell.value)
+            # ==========================貼上BOM表資料==========================
 
             loops += 1
         page0 -= 1
@@ -301,24 +337,38 @@ def decide_material(cunt, page):
     if page >= 1:
         pagenumb = 30
     page0 = page
-    for j in range(1, page + 1):
+    for j in range(1, page + 2):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        Sheets(Sheetname).Select()
+        ws = wb[Sheetname]
         for i in range(1, pagenumb + 1):
+            # ==========================複製BOM表資料==========================
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
             kss = {"What": "Material_Data", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": "False"}
 
-            wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
+            k = 0
+            row = ws['C' + str(k + 4)]
+            cell = row
+            data_size.append(cell.value)
+            k += 1
+            # ==========================複製BOM表資料==========================
+
+            # ==========================貼上BOM表資料==========================
+
+            wb = openpyxl.load_workbook(str(str(onwork_BOM_open) + "BOM_空白頁.xlsx"))
             kss1 = {"What": "材質", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                     "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                     "SearchFormat": False}
 
+            ws.cell(row=(i + 6), column=4, value=cell.value)
+            # ==========================貼上BOM表資料==========================
+
             loops += 1
-            page0 -= 1
-            if page0 == 0:
-                pagenumb = cunt - 30 * page
+        page0 -= 1
+        if page0 == 0:
+            pagenumb = cunt - 30 * page
 
 
 def decide_Heat_treatment(cunt, page):
@@ -328,19 +378,32 @@ def decide_Heat_treatment(cunt, page):
     if page >= 1:
         pagenumb = 30
     page0 = page
-    for j in range(1, page + 1):
+    for j in range(1, page + 2):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        Sheets(Sheetname).Select()
-        for i in range(1, pagenumb):
+        ws = wb[Sheetname]
+        for i in range(1, pagenumb + 1):
+            # ==========================複製BOM表資料==========================
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
             kss = {"What": "Heat Treatment", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
 
-            wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
+            k = 0
+            row = ws['D' + str(k + 4)]
+            cell = row
+            data_size.append(cell.value)
+            k += 1
+            # ==========================複製BOM表資料==========================
+
+            # ==========================貼上BOM表資料==========================
+            wb = openpyxl.load_workbook(str(str(onwork_BOM_open) + "BOM_空白頁.xlsx"))
             kss1 = {"What": "熱處理", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                     "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                     "SearchFormat": False}
+
+            ws.cell(row=(i + 6), column=5, value=cell.value)
+            # ==========================貼上BOM表資料==========================
 
             loops += 1
         page0 -= 1
@@ -355,19 +418,31 @@ def decide_description(cunt, page):
     if page >= 1:
         pagenumb = 30
     page0 = page
-    for j in range(1, page + 1):
+    for j in range(1, page + 2):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        Sheets(Sheetname).Select()
-        for i in range(1, pagenumb):
+        ws = wb[Sheetname]
+        for i in range(1, pagenumb + 1):
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
             kss = {"What": "Product Description", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
 
-            wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
+            k = 0
+            row = ws['E' + str(k + 4)]
+            cell = row
+            data_size.append(cell.value)
+            k += 1
+            # ==========================複製BOM表資料==========================
+
+            # ==========================貼上BOM表資料==========================
+            wb = openpyxl.load_workbook(str(str(onwork_BOM_open) + "BOM_空白頁.xlsx"))
             kss1 = {"What": "規格", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                     "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                     "SearchFormat": False}
+
+            ws.cell(row=(i + 6), column=3, value=cell.value)
+            # ==========================貼上BOM表資料==========================
 
             loops += 1
         page0 -= 1
@@ -382,19 +457,31 @@ def decide_Pa(cunt, page):
     if page >= 1:
         pagenumb = 30
     page0 = page
-    for j in range(1, page + 1):
+    for j in range(1, page + 2):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        Sheets(Sheetname).Select()
-        for i in range(1, pagenumb):
+        ws = wb[Sheetname]
+        for i in range(1, pagenumb + 1):
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
             kss = {"What": "Page", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}
 
-            wb = openpyxl.load_workbook(str(str(BOM_output_path) + "BOM_空白頁.xlsx"))
+            k = 0
+            row = ws['F' + str(k + 4)]
+            cell = row
+            data_size.append(cell.value)
+            k += 1
+            # ==========================複製BOM表資料==========================
+
+            # ==========================貼上BOM表資料==========================
+            wb = openpyxl.load_workbook(str(str(onwork_BOM_open) + "BOM_空白頁.xlsx"))
             kss1 = {"What": "頁碼", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                     "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                     "SearchFormat": False}
+
+            ws.cell(row=(i + 6), column=7, value=cell.value)
+            # ==========================貼上BOM表資料==========================
 
             loops += 1
         page0 -= 1
@@ -410,10 +497,11 @@ def decide_cost(page):
     LDZB_cost(page)
 
 
-def draw_block(cunt, page):
+def draw_block(cunt, page):  # 形式統一
     for i in range(1, page + 1):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(i))
-        Sheets(Sheetname).Select()
+        ws = wb[Sheetname]
         # ActiveWindow.SmallScroll(Down=21)
         # Range("B7:G36").Select()
         # ActiveWindow.SmallScroll(Down=-12)
@@ -1044,8 +1132,9 @@ def MSB_cost():
 def MSP_cost(page):
     MSP32_190 = 262
     for CBi in range(1, page + 1):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(CBi))
-        Sheets(Sheetname).Select()
+        ws = wb[Sheetname]
         CBC_0 = None
         # for CBj in range(1, 30):
         #     CBK = {What: "MSP", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
@@ -1142,32 +1231,24 @@ def LDZB_cost(page):
 
 
 def Adjustment(page):
-    for i in range(1, page + 1):
-        Sheetname = str(str("Sheet") + str(i))
-        Sheets(Sheetname).Select()
-        # --------------------------------------------------------調整欄寬至適當大小
-        # ActiveSheet.Range("B7").Select()
-        # Range(Selection, Selection.End(xlDown)).Select()
-        # ActiveWindow.RangeSelection()
-        # Columns.AutoFit()
-        # Rows.AutoFit()
-        # # --------------------------------------------------------調整欄寬至適當大小
-        #
-        # # --------------------------------------------------------文字置中
-        # Worksheets(Sheetname).Activate()
-        # ActiveSheet.UsedRange.Select()
-        # Range("A1:H37").Borders.LineStyle = xlContinuous  # EXCEL範圍內加上框線
-        # Selection()
-        # HorizontalAlignment = xlCenter
-        # VerticalAlignment = xlCenter
-        # WrapText = False
-        # Orientation = 0
-        # AddIndent = False
-        # IndentLevel = 0
-        # ShrinkToFit = False
-        # ReadingOrder = xlContext
-        # # --------------------------------------------------------文字置中
-        # Selection.Font.Name = "標楷體"
+    for i in range(1, page + 2):
+        Sheet = "Sheet" + str(i)
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+        ws = wb[Sheet]
+
+        # ==========================調整欄寬至適當大小==========================
+        ws.column_dimensions['B'].width.AutoFit()
+        ws.row_dimensions[7:36].height.AutoFit()
+        # ==========================調整欄寬至適當大小==========================
+
+        # ==========================文字置中==========================
+        Sheet['A1':'H37'].alignment = Alignment(horizontal='center', vertical='center')
+        # ==========================文字置中==========================
+
+        # ==========================更改字型==========================
+        fontObj1 = Font(name=u'標楷體', bold=False, italic=False, size=12)
+        Sheet['A1':'H37'].font = fontObj1
+        # ==========================更改字型==========================
 
 
 BOMMaking()

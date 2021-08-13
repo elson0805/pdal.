@@ -1,5 +1,6 @@
 import os
 import openpyxl
+import xlwings as xw
 from openpyxl import Workbook
 from openpyxl import load_workbook
 
@@ -63,18 +64,87 @@ BOM_output_path = str(file_path + "\\auto\\BOM_output-GTCA022\\")
 #             cunt += 1
 
 
-data = []
+data_size = []
+cunt = 46
 
 
-def size():
-    wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
-    ws = wb.active
-    for row in ws['A5':'A50']:
-        for cell in row:
-            print(cell.value, end=' ')
-            data.append(cell.value)
-        print()
-    print(data)
+def test():
+    app = xw.App(visible=True, add_book=False)  # 程式可見，只打開不新建工作薄
+    app.display_alerts = False  # 警告關閉
+    app.screen_updating = True  # 螢幕更新關閉
+
+    wb = app.books.open(onwork_BOM_open + "BOM_空白頁.xlsx")
+    wb.save()  # 儲存檔案
+    # wb.close()  # 關閉檔案
+    # app.quit()  # 關閉程式
 
 
-cunt()
+def output_bom():
+    wb1 = load_workbook(BOM_output_path + "catia_bom.xlsx")
+    wb2 = load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+    (page) = decide_Page(cunt)
+    # decide_Size(cunt, page)
+
+
+def decide_Page(cunt):
+    wb = load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+    page = int(cunt / 30)
+    if page < 1:
+        page = 0
+    for i in range(page, 2):
+        sheet = wb['Sheet1']
+        target = wb.copy_worksheet(sheet)
+        target.title = 'Sheet' + str(i + 1)
+
+    if page < 1:
+        pagenumb = cunt
+    if page >= 1:
+        pagenumb = 30
+
+    wb.save(BOM_output_path + "BOM_空白頁.xlsx")
+
+    return page
+
+
+def decide_Size(cunt, page):
+    loops = 0
+    if page < 1:
+        pagenumb = cunt
+    if page >= 1:
+        pagenumb = 30
+    page0 = page
+
+    for j in range(1, page + 2):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+        ws = wb["Sheet" + str(j)]
+        for i in range(1, pagenumb + 1):
+            # ==========================複製BOM表資料==========================
+            wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
+            ws = wb.active
+            kss = {"What": "Size", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+                   "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
+                   "SearchFormat": False}
+
+            row = ws['G' + str(i + 4)]
+            cell = row
+            data_size.append(cell.value)
+            # print(data_size)
+            # ==========================複製BOM表資料==========================
+
+            # ==========================貼上BOM表資料==========================
+            wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+            ws = wb.active
+            kss1 = {"What": "規格", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
+                    "SearchFormat": False}
+
+            ws.cell(row=(i + 6), column=3, value=cell.value)
+            # ==========================貼上BOM表資料==========================
+
+            loops += 1
+        page0 -= 1
+        if page0 == 0:
+            pagenumb = cunt - 30 * page
+
+
+test()
