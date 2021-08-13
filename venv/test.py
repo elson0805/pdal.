@@ -1,11 +1,14 @@
-import os
+import csv
+import win32com.client as win32
 import openpyxl
+from openpyxl.styles import Font, colors, Alignment
 import xlwings as xw
-from openpyxl import Workbook
-from openpyxl import load_workbook
+import time
 
 # 檔案路徑
 file_path = str('C:\\Users\\PDAL\\Desktop\\VB-GTCA022')
+# 模具規範路徑
+die_rule_path = str(file_path + "\\auto\\die_rule\\")
 # 製作一半的BOM表儲存路徑
 onwork_BOM_open = str(file_path + "\\BOM表\\")
 # BOM表儲存路徑
@@ -67,12 +70,12 @@ BOM_output_path = str(file_path + "\\auto\\BOM_output-GTCA022\\")
 data_size = []
 cunt = 46
 
+app = xw.App(visible=True, add_book=False)  # 程式可見，只打開不新建工作薄
+app.display_alerts = False  # 警告關閉
+app.screen_updating = True  # 螢幕更新關閉
+
 
 def test():
-    app = xw.App(visible=True, add_book=False)  # 程式可見，只打開不新建工作薄
-    app.display_alerts = False  # 警告關閉
-    app.screen_updating = True  # 螢幕更新關閉
-
     wb = app.books.open(onwork_BOM_open + "BOM_空白頁.xlsx")
     wb.save()  # 儲存檔案
     # wb.close()  # 關閉檔案
@@ -147,4 +150,22 @@ def decide_Size(cunt, page):
             pagenumb = cunt - 30 * page
 
 
-test()
+def create_catia_bom():
+    catapp = win32.Dispatch("CATIA.Application")
+    document = catapp.ActiveDocument
+    product1 = document.Product
+    wb1 = app.books.open(die_rule_path + "rule.xlsx")
+
+    assemblyConvertor1 = product1.getItem("BillOfMaterial")
+    arrayOfVariantOfBSTR1 = ["Quantity", "Part Number", "Material_Data", "Heat Treatment", "Product Description",
+                             "Page", "Size"]
+
+    assemblyConvertor1Variant = assemblyConvertor1
+    # assemblyConvertor1Variant.SetSecondaryFormat(arrayOfVariantOfBSTR1)
+    assemblyConvertor1Variant.SetCurrentFormat(arrayOfVariantOfBSTR1)
+
+    # 含數據內容之BOM表(複製用)儲存路徑
+    assemblyConvertor1.Print("XLS", BOM_output_path + "catia_bom.xlsx", product1)
+
+
+create_catia_bom()

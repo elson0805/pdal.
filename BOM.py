@@ -34,33 +34,36 @@ with open(strip_parameters_file_root) as csvFile:
     parameter_list = tuple(tuple(rows)[0])
     strip_parameter_list = parameter_list
 
-number = 654452
+Frame_Commissioner = "專案人員"
+Frame_guest_number = 654452
+Finished_product_Name = "矽鋼片連續模"
+Company_Name = "金屬中心"
 
 Sheets = [0] * 99
 data = []
 data_size = []
 
-app = xw.App(visible=True, add_book=False)  # 程式可見，只打開不新建工作薄
+app = xw.App(visible=True, add_book=False)  # EXCEL可見
 app.display_alerts = False  # 警告關閉
-app.screen_updating = True  # 螢幕更新關閉
+app.screen_updating = True  # 螢幕更新
 
 
 def BOMMaking():
-    create_catia_bom()
-    (page) = output_bom()
-    information_bom(page)
-    save()
+    create_catia_bom()  # 將各Part中的屬性提取出
+    (page) = output_bom()  # 輸出BOM表
+    information_bom(page)  # 輸入BOM表基本資料
+    save()  # 存檔
 
 
 def create_catia_bom():
     catapp = win32.Dispatch("CATIA.Application")
     document = catapp.ActiveDocument
     product1 = document.Product
-    wb1 = app.books.open(die_rule_path + "rule.xlsx")
+    # wb1 = app.books.open(die_rule_path + "rule.xlsx")
 
     assemblyConvertor1 = product1.getItem("BillOfMaterial")
     arrayOfVariantOfBSTR1 = ["Quantity", "Part Number", "Material_Data", "Heat Treatment", "Product Description",
-                             "Page", "Size"]
+                             "Page", "Size"]  # 提取的各項名稱
 
     assemblyConvertor1Variant = assemblyConvertor1
     # assemblyConvertor1Variant.SetSecondaryFormat(arrayOfVariantOfBSTR1)
@@ -103,7 +106,7 @@ def information_bom(page):
                "SearchFormat": False}
         for Data in data:
             if Data == "製    表":
-                ws.cell(row=4, column=7, value="專案人員")
+                ws.cell(row=4, column=7, value=Frame_Commissioner)
 
             elif Data == "製表日期":
                 kss["What"] = "製表日期"
@@ -117,34 +120,26 @@ def information_bom(page):
 
             elif Data == "模具編號":
                 kss["What"] = "模具編號"
-                ws.cell(row=3, column=3, value=number)
+                ws.cell(row=3, column=3, value=Frame_guest_number)
 
             elif Data == "品    號":
                 kss["What"] = "品    號"
-                ws.cell(row=4, column=3, value=number)
+                ws.cell(row=4, column=3, value=Frame_guest_number)
 
             elif Data == "品    名":
                 kss["What"] = "品    名"
-                ws.cell(row=5, column=3, value='矽鋼片連續模')
+                ws.cell(row=5, column=3, value=Finished_product_Name)
 
-        ws.cell(row=5, column=3, value='金屬中心')
+        ws.cell(row=5, column=3, value=Company_Name)
     Adjustment(page)
 
 
 def save():
     wb = openpyxl.Workbook(BOM_output_path + "catia_bom.xlsx")
-    write_BOM_location = str(BOM_output_path) + "BOM.xls"  # 最後BOM表存檔
+    write_BOM_location = str(BOM_output_path) + "BOM.xlsx"  # 最後BOM表存檔
     wb.save(write_BOM_location)
-    FileName = write_BOM_location
-    FileFormat = xlNormal, Password = ""
-    WriteResPassword = ""
-    ReadOnlyRecommended = False
-    CreateBackup = False
-
-    # ActiveWorkbook.SaveAs()
-    # FileName = str("C:\\Documents and Settings\\SOA\\桌面\\BOM.xls")
-    # FileFormat = xlNormal
-    # Password = ""
+    # FileName = write_BOM_location
+    # FileFormat = xlNormal, Password = ""
     # WriteResPassword = ""
     # ReadOnlyRecommended = False
     # CreateBackup = False
@@ -167,17 +162,17 @@ def decide_Row():  # 判斷資料數目
             cunt -= 1
             break
         data.append(cell.value)
-    print(data)
+    # print(data)
 
     return cunt
 
 
 def decide_Page(cunt):
-    wb = openpyxl.load_workbook(BOM_output_path + "BOM_空白頁.xlsx")
+    wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
     page = int(cunt / 30)
     if page < 1:
         page = 0
-    for i in range(page, 1, -1):
+    for i in range(page, 3):
         j = i
         sheet = wb['Sheet1']
         target = wb.copy_worksheet(sheet)
@@ -491,9 +486,9 @@ def decide_Pa(cunt, page):
 
 
 def decide_cost(page):
-    CB_cost()
-    MS_cost()
-    MSB_cost()
+    CB_cost(page)
+    MS_cost(page)
+    MSB_cost(page)
     MSP_cost(page)
     LDZB_cost(page)
 
@@ -553,7 +548,7 @@ def draw_block(cunt, page):  # 形式統一
         # MergeCells = False
 
 
-def CB_cost():
+def CB_cost(page):
     CB3_5 = 1
     CB3_6 = 1
     CB3_8 = 1
@@ -758,17 +753,17 @@ def CB_cost():
     CB12_270 = 256
     CB12_280 = 274
     CB12_290 = 292
-    # for CBi in range(1, page + 1):
-    #     Sheetname = str("Sheet" + str(CBi))
-    #     Sheets(Sheetname).Select()
-    #     CBC0 = None
-    #     for CBj in range(1, 30):
-    #         CBK = {"What": "CB", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
-    #                "SearchOrder": "xlByRows",
-    #                "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False, "SearchFormat": False}
-    #         Cells.Find(CBK)
-    #         if CBK == None:
-    #             break
+    for CBi in range(1, page + 1):
+        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+        Sheetname = str("Sheet" + str(CBi))
+        ws = wb[Sheetname]
+        CBC_0 = ""
+        for CBj in range(1, 30):
+            CBK = {"What": "CB", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
+                   "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
+                   "SearchFormat": False}
+            if CBK == "":
+                break
     #         CBk1 = CBK.Row
     #         CBk2 = CBK.Column
     #         Cells(CBk1, CBk2).Select()
@@ -820,7 +815,7 @@ def CB_cost():
     #         ActiveCell.FormulaR1C1 = CBcost * CBb
 
 
-def MS_cost():
+def MS_cost(page):
     MS1_6 = 10
     MS1_8 = 10
     MS1_10 = 10
@@ -975,7 +970,7 @@ def MS_cost():
     #         ActiveCell.FormulaR1C1 = CBcost * CBb
 
 
-def MSB_cost():
+def MSB_cost(page):
     MSB4_10 = 25
     MSB4_15 = 20
     MSB4_20 = 20
