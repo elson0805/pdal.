@@ -88,9 +88,6 @@ def output_bom():
     decide_Pa(cunt, page)  # 頁碼
     # decide_cost(cunt, page)  # 價格
     draw_block(cunt, page)  # 備註
-    # xlApp = GetObject("Excel.Application")  # 引用正在執行的Excel Application
-    # xlBook = xlApp.openpyxl.load_workbook(str((onwork_BOM_open) + "BOM_空白頁.xlsx"))  # 打開已經存在的EXCEL工件簿文件
-    # xlApp.Visible = True  # 要開啟，不然程式會隱藏
 
     return page
 
@@ -168,15 +165,15 @@ def decide_Row():  # 判斷資料數目
 
 
 def decide_Page(cunt):
-    wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+    wb = xw.Book(onwork_BOM_open + "BOM_空白頁.xlsx")
+    sheet = wb.sheets['Sheet1']
     page = int(cunt / 30)
     if page < 1:
         page = 0
-    for i in range(page, 3):
-        j = i
-        sheet = wb['Sheet1']
-        target = wb.copy_worksheet(sheet)
-        target.title = 'Sheet' + str(i)
+    for i in range(page, 2):
+        sheet2 = wb.sheets[-1]  # 複製到最後一個
+        sheet.api.Copy(After=sheet2.api)
+        wb.sheets[i].name = 'Sheet' + str(i)
 
     if page < 1:
         pagenumb = cunt
@@ -195,9 +192,8 @@ def decide_Size(cunt, page):
     page0 = page
 
     for j in range(1, page + 2):
-        Sheetname = "Sheet" + str(j)
-        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
-        ws = wb[Sheetname]
+        wb = xw.Book(onwork_BOM_open + "BOM_空白頁.xlsx")
+        sheet = wb.sheets['Sheet' + str(j)]
         for i in range(1, pagenumb + 1):
             # ==========================複製BOM表資料==========================
             wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
@@ -230,11 +226,11 @@ def decide_Size(cunt, page):
 
 
 def decide_NO(cunt, page):
-    wb = openpyxl.load_workbook(str(str(onwork_BOM_open) + "BOM_空白頁.xlsx"))
+    wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
     page0 = page
     for j in range(1, page + 2):
         Sheetname = str("Sheet" + str(j))
-        ws = wb[Sheetname]
+        ws = wb.get_sheet_by_name(Sheetname)
         for i in range(1, pagenumb + 1):
             kss = {"What": "件號", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
@@ -257,7 +253,7 @@ def decide_name(cunt, page):
     for j in range(1, page + 2):
         wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        ws = wb[Sheetname]
+        ws = wb.get_sheet_by_name(Sheetname)
         for i in range(1, pagenumb + 1):
             # ==========================複製BOM表資料==========================
             wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
@@ -297,7 +293,7 @@ def decide_Quantity(cunt, page):
     for j in range(1, page + 2):
         wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        ws = wb[Sheetname]
+        ws = wb.get_sheet_by_name(Sheetname)
         for i in range(1, pagenumb + 1):
             # ==========================複製BOM表資料==========================
             wb = openpyxl.load_workbook(BOM_output_path + "catia_bom.xlsx")
@@ -336,7 +332,7 @@ def decide_material(cunt, page):
     for j in range(1, page + 2):
         wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        ws = wb[Sheetname]
+        ws = wb.get_sheet_by_name(Sheetname)
         for i in range(1, pagenumb + 1):
             # ==========================複製BOM表資料==========================
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
@@ -377,7 +373,7 @@ def decide_Heat_treatment(cunt, page):
     for j in range(1, page + 2):
         wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        ws = wb[Sheetname]
+        ws = wb.get_sheet_by_name(Sheetname)
         for i in range(1, pagenumb + 1):
             # ==========================複製BOM表資料==========================
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
@@ -417,7 +413,7 @@ def decide_description(cunt, page):
     for j in range(1, page + 2):
         wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        ws = wb[Sheetname]
+        ws = wb.get_sheet_by_name(Sheetname)
         for i in range(1, pagenumb + 1):
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
             kss = {"What": "Product Description", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
@@ -456,7 +452,7 @@ def decide_Pa(cunt, page):
     for j in range(1, page + 2):
         wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(j))
-        ws = wb[Sheetname]
+        ws = wb.get_sheet_by_name(Sheetname)
         for i in range(1, pagenumb + 1):
             wb = openpyxl.load_workbook(str(str(BOM_output_path) + "catia_bom.xlsx"))
             kss = {"What": "Page", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
@@ -497,7 +493,7 @@ def draw_block(cunt, page):  # 形式統一
     for i in range(1, page + 1):
         wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
         Sheetname = str("Sheet" + str(i))
-        ws = wb[Sheetname]
+        ws = wb.get_sheet_by_name(Sheetname)
         # ActiveWindow.SmallScroll(Down=21)
         # Range("B7:G36").Select()
         # ActiveWindow.SmallScroll(Down=-12)
@@ -1228,9 +1224,9 @@ def LDZB_cost(page):
 
 def Adjustment(page):
     for i in range(1, page + 2):
-        Sheet = "Sheet" + str(i)
+        Sheetname = "Sheet" + str(i)
         wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
-        ws = wb[Sheet]
+        ws = wb.get_sheet_by_name(Sheetname)
 
         # ==========================調整欄寬至適當大小==========================
         ws.column_dimensions['B'].width.AutoFit()
@@ -1238,12 +1234,12 @@ def Adjustment(page):
         # ==========================調整欄寬至適當大小==========================
 
         # ==========================文字置中==========================
-        Sheet['A1':'H37'].alignment = Alignment(horizontal='center', vertical='center')
+        Sheetname['A1':'H37'].alignment = Alignment(horizontal='center', vertical='center')
         # ==========================文字置中==========================
 
         # ==========================更改字型==========================
         fontObj1 = Font(name=u'標楷體', bold=False, italic=False, size=12)
-        Sheet['A1':'H37'].font = fontObj1
+        Sheetname['A1':'H37'].font = fontObj1
         # ==========================更改字型==========================
 
 
