@@ -1176,8 +1176,8 @@ def LDZB_cost(page):
     LDBZ32_80 = 1325
     for CBi in range(1, page + 1):
         Sheetname = str("Sheet" + str(CBi))
-        Sheets(Sheetname).Select()
-        CBC_0 = None
+        # Sheets(Sheetname).Select()
+        # CBC_0 = None
         # for CBj in range(1, 30):
         #     CBK = {What: "LDBZ", After: ActiveCell, LookIn: xlFormulas, LookAt: xlPart, SearchOrder: xlByRows,
         #            SearchDirection: xlNext, MatchCase: False, MatchByte: False, SearchFormat: False}
