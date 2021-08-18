@@ -55,5 +55,8 @@ def assemble_hide():  # 隱藏組力拘束
     selection1.Clear()
     # ===============================搜尋組立起點==============================
 
+    productDocument1 = catapp.ActiveDocument
+    productDocument1.save()
+
 
 assemble_hide()
