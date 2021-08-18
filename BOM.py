@@ -1,6 +1,7 @@
 import csv
 import win32com.client as win32
 import openpyxl
+from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, colors, Alignment
 import xlwings as xw
 import time
@@ -165,15 +166,22 @@ def decide_Row():  # 判斷資料數目
 
 
 def decide_Page(cunt):
-    wb = xw.Book(onwork_BOM_open + "BOM_空白頁.xlsx")
-    sheet = wb.sheets['Sheet1']
+    wb2 = app.books.open(onwork_BOM_open + "BOM_空白頁.xlsx")
+    wb = load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+
     page = int(cunt / 30)
     if page < 1:
         page = 0
     for i in range(page, 2):
-        sheet2 = wb.sheets[-1]  # 複製到最後一個
-        sheet.api.Copy(After=sheet2.api)
-        wb.sheets[i].name = 'Sheet' + str(i)
+        j = i + 1
+        target = wb['Sheet1']
+        target1 = wb.copy_worksheet(target)
+        target1.title = 'Sheet' + str(j)
+
+        wb.save(BOM_output_path + "BOM_空白頁.xlsx")
+
+        wb2.close()
+        wb2 = app.books.open(BOM_output_path + "BOM_空白頁.xlsx")
 
     if page < 1:
         pagenumb = cunt
@@ -749,12 +757,11 @@ def CB_cost(page):
     CB12_270 = 256
     CB12_280 = 274
     CB12_290 = 292
-    for CBi in range(1, page + 1):
-        wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
-        Sheetname = str("Sheet" + str(CBi))
-        ws = wb[Sheetname]
+    for CBi in range(1, page + 2):
+        wb = xw.Book(onwork_BOM_open + "BOM_空白頁.xlsx")
+        sheet = wb.sheets['Sheet' + str(CBi)]
         CBC_0 = ""
-        for CBj in range(1, 30):
+        for CBj in range(1, 30 + 1):
             CBK = {"What": "CB", "After": "ActiveCell", "LookIn": "xlFormulas", "LookAt": "xlPart",
                    "SearchOrder": "xlByRows", "SearchDirection": "xlNext", "MatchCase": False, "MatchByte": False,
                    "SearchFormat": False}

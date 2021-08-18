@@ -77,18 +77,23 @@ app.screen_updating = True  # 螢幕更新關閉
 from copy import copy
 from openpyxl import load_workbook, Workbook
 
-
 def decide_Page(cunt):
     wb2 = app.books.open(onwork_BOM_open + "BOM_空白頁.xlsx")
-    wb = openpyxl.load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+    wb = load_workbook(onwork_BOM_open + "BOM_空白頁.xlsx")
+
     page = int(cunt / 30)
     if page < 1:
         page = 0
     for i in range(page, 2):
         j = i + 1
-        sheet = wb.worksheets[0]
-        target = wb.copy_worksheet(sheet)
-        target.title = 'Sheet' + str(j)
+        target = wb['Sheet1']
+        target1 = wb.copy_worksheet(target)
+        target1.title = 'Sheet' + str(j)
+
+        wb.save(BOM_output_path + "BOM_空白頁.xlsx")
+
+        wb2.close()
+        wb2 = app.books.open(BOM_output_path + "BOM_空白頁.xlsx")
 
     if page < 1:
         pagenumb = cunt
@@ -96,17 +101,4 @@ def decide_Page(cunt):
         pagenumb = 30
 
 
-def test():
-    wb2 = app.books.open(onwork_BOM_open + "BOM_空白頁.xlsx")
-    wb = xw.Book(onwork_BOM_open + "BOM_空白頁.xlsx")
-    sheet = wb.sheets['Sheet1']
-
-    for i in range(1, 2):
-        # 将sheet1工作表复制到该工作簿的最后一个工作表后面
-        sheet2 = wb.sheets[-1]
-        sheet.api.Copy(After=sheet2.api)
-
-        wb.sheets[i].name = 'Sheet2' #重命名工作表
-
-
-test()
+decide_Page(cunt)
